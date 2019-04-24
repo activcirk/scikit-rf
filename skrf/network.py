@@ -2896,49 +2896,48 @@ class Network(object):
             w = self
         return t, npy.cumsum(mf.irfft(w.s, n=n).flatten())
 
-@classmethod
-def smodel(self, ntwkB):
-    '''
-    the average magnitude of the difference between each element of the S-parameter matrix
+    def smodel(self, ntwkB):
+        '''
+        the average magnitude of the difference between each element of the S-parameter matrix
 
 
-    Parameters
-    -----------
-    ntwkB : :class:`Network`
-            network 'B'
+        Parameters
+        -----------
+        ntwkB : :class:`Network`
+                 network 'B'
 
-    Returns
-    ---------
-    ntwkC : :class:`float`
-           The average
+        Returns
+        ---------
+        ntwkC : :class:`float`
+               The average
 
 
-    Notes
-    -------
-            useful for creating a small signal model based on S-parameters
-            also known as the average L1 Norm
+        Notes
+        -------
+                useful for creating a small signal model based on S-parameters
+                also known as the average L1 Norm
 
-    Examples
-    ---------
-    To evaluate
+        Examples
+        ---------
+        To evaluate
 
-    >>> ntwkA = rf.Network('ntwkA.s2p')
-    >>> ntwkB = rf.Network('ntwkB.s2p')
-    >>> error = ntwkA.smodel(ntwkB)
+        >>> ntwkA = rf.Network('ntwkA.s2p')
+        >>> ntwkB = rf.Network('ntwkB.s2p')
+        >>> error = ntwkA.smodel(ntwkB)
 
-    '''
-    # some checking
-    check_frequency_equal(self, ntwkB)
+        '''
+        # some checking
+        check_frequency_equal(self, ntwkB)
 
-    if (self.nports != ntwkA.nports ):
-        raise IndexError('smodel given two networks with different number of ports')
+        if (self.nports != ntwkB.nports ):
+            raise IndexError('smodel given two networks with different number of ports')
 
-    error=0.0
-    for m in range(number_of_ports):
-       for n in range(ntwrkB.number_of_ports):
-          error+= np.absolute(self.s[:, m, n]-ntwrkB.s[:, m, n])
+        error=0.0
+        for m in range(self.number_of_ports):
+            for n in range(ntwkB.number_of_ports):
+                error+= npy.absolute(self.s[:, m, n]-ntwkB.s[:, m, n])
 
-    return error/self.number_of_ports**2
+        return error/self.number_of_ports**2
 
 
 ## Functions operating on Network[s]
