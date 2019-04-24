@@ -54,6 +54,7 @@ Interpolation and Concatenation Along Frequency Axis
 
     stitch
     overlap
+    change_phasemag
     Network.resample
     Network.interpolate
     Network.interpolate_self
@@ -133,6 +134,7 @@ Misc Functions
     chopinhalf
     Network.nudge
     Network.renormalize
+    smodel
 
 """
 
@@ -2451,6 +2453,37 @@ class Network(object):
         return time_gate(self, *args, **kw)
 
 
+    # optimize
+    def change_phasemag(self, mag_init, phase_init, **kwargs):
+        '''
+        Completely replaces the phase and magnitude of s-parameters of a network
+
+        Used by initializing with an s-parameter file ( to set the frequencies) and then combines with arbitrary phase and magnitude
+
+        Parameters
+        ------------
+        mag_init : list-like
+                array of magnitudes to become the network's S-parameters
+        phase_init : list-like
+                array of phases in degrees become the network's S-parameters
+
+        '''
+        npts=len(self.s)
+        phaseDelta=npy.asarray(phase_init)
+        pD=phaseDelta.reshape(npts,1)
+        phaseSpar = self.s_deg[0:npts,:,0]
+        phaseTotal = npy.add(phaseSpar,pD)
+
+        magDelta=npy.asarray(mag_init)
+        mD=magDelta.reshape(npts,1)
+        magSpar = self.s_mag[0:npts,:,0]
+        magTotal = npy.add(magSpar,mD)
+
+        phase=phaseTotal.reshape(npts,1,1)
+        mag=magTotal.reshape(npts,1,1)
+
+        self.s = mag * npy.exp(1j * npy.pi / 180. * phase)
+
     # noise
     def add_noise_polar(self, mag_dev, phase_dev, **kwargs):
         '''
@@ -2862,6 +2895,50 @@ class Network(object):
         else:
             w = self
         return t, npy.cumsum(mf.irfft(w.s, n=n).flatten())
+
+@classmethod
+def smodel(self, ntwkB):
+    '''
+    the average magnitude of the difference between each element of the S-parameter matrix
+
+
+    Parameters
+    -----------
+    ntwkB : :class:`Network`
+            network 'B'
+
+    Returns
+    ---------
+    ntwkC : :class:`float`
+           The average
+
+
+    Notes
+    -------
+            useful for creating a small signal model based on S-parameters
+            also known as the average L1 Norm
+
+    Examples
+    ---------
+    To evaluate
+
+    >>> ntwkA = rf.Network('ntwkA.s2p')
+    >>> ntwkB = rf.Network('ntwkB.s2p')
+    >>> error = ntwkA.smodel(ntwkB)
+
+    '''
+    # some checking
+    check_frequency_equal(self, ntwkB)
+
+    if (self.nports != ntwkA.nports ):
+        raise IndexError('smodel given two networks with different number of ports')
+
+    error=0.0
+    for m in range(number_of_ports):
+       for n in range(ntwrkB.number_of_ports):
+          error+= np.absolute(self.s[:, m, n]-ntwrkB.s[:, m, n])
+
+    return error/self.number_of_ports**2
 
 
 ## Functions operating on Network[s]
@@ -5184,3 +5261,5 @@ def two_port_reflect(ntwk1, ntwk2=None):
     except(TypeError):
         pass
     return result
+
+
