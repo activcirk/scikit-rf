@@ -54,6 +54,7 @@ Interpolation and Concatenation Along Frequency Axis
 
     stitch
     overlap
+    change_phase
     change_phasemag
     Network.resample
     Network.interpolate
@@ -2452,6 +2453,29 @@ class Network(object):
         '''
         return time_gate(self, *args, **kw)
 
+    # optimize
+    def change_phase(self, phase_init, **kwargs):
+        '''
+        Completely replaces the phase of s-parameters of a network
+
+        Used by initializing network with an s-parameter file (to set the frequencies) and then combines with arbitrary phase 
+
+        Parameters
+        ------------
+        phase_init : list-like
+                array of phases in degrees become the network's S-parameters
+
+        '''
+        npts=len(self.s)
+        phaseDelta=npy.asarray(phase_init)
+        pD=phaseDelta.reshape(npts,1)
+
+        magSpar = self.s_mag[0:npts,:,0]
+
+        phase=phaseDelta.reshape(npts,1,1)
+        mag=magSpar.reshape(npts,1,1)
+
+        self.s = mag * npy.exp(1j * npy.pi / 180. * phase)
 
     # optimize
     def change_phasemag(self, mag_init, phase_init, **kwargs):
